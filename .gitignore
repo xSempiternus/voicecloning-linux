@@ -1,0 +1,134 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments (root y submódulos)
+.venv/
+venv/
+env/
+ENV/
+so-vits-svc/.venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VSCode settings
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs, outputs, checkpoints
+logs/
+logs/**
+*.log
+*.out
+*.pth
+*.ckpt
+*.pt
+*.tensorboard
+
+# Data and results
+/data/
+data/
+data/**
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.zip
+*.tar.gz
+*.tar
+*.npz
+*.npy
+
+# Model files
+models/
+models/**
+*.onnx
+*.pb
+*.h5
+*.pkl
+*.joblib
+
+# User uploads and results
+uploads/
+results/
+
+# So-VITS-SVC and Demucs generated files
+so-vits-svc/logs/
+so-vits-svc/logs/**
+so-vits-svc/dataset_raw/
+so-vits-svc/dataset_raw/**
+so-vits-svc/filelists/*.txt
+so-vits-svc/pretrain/
+so-vits-svc/pretrain/**
+so-vits-svc/onnxexport/
+so-vits-svc/onnxexport/**
+so-vits-svc/trained/
+so-vits-svc/vdecoder/
+so-vits-svc/vencoder/
+
+# Python cache and test artifacts
+*.pytest_cache/
+*.mypy_cache/
+*.coverage
+.coverage
+htmlcov/
+.cache/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# IDE files
+.idea/
+*.swp
+*.swo
+.spyderproject
+.spyproject
+
+# Editor/OS temp files
+*~
+*.bak
+*.tmp
+*.orig
+*.rej
+
+# Submodule ignores
+so-vits-svc/.git/
+
+# Keep empty folders
+!data/.gitkeep
+!logs/configs/
+
+# Exclude user secrets/configs
+*.env
+.env*
+config.yaml
+configs/*.yaml
+.pre-commit-config.yaml
+
+# pip/poetry lock files (opcional)
+Pipfile.lock
+poetry.lock
+
+# PyCharm
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# MacOS
+.AppleDouble
+.LSOverride
+
+# nano/Emacs/Sublime
+.*.swp
+.*.swo
+*.sublime-workspace
+*.sublime-project

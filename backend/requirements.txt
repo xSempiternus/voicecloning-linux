@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+pydantic
+python-multipart
+soundfile
+librosa
+tqdm
+requests
+# Para separación de fuentes
+demucs # se recomienda instalar vía pip o con instrucciones de su repo
+# Para inferencia So-VITS-SVC y clustering
+faiss-cpu # Problemas en Windows: ver README para solución alternativa
+# Otras dependencias pueden estar en so-vits-svc/requirements.txt
