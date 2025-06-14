@@ -101,6 +101,59 @@ Si necesitas compartir datos o modelos, usa servicios externos (Google Drive, Hu
 
 ---
 
+## Nota importante sobre So-VITS-SVC
+
+A partir de la versión actual, la carpeta `so-vits-svc` ya **no es un submódulo**: ahora forma parte integral de este repositorio y puedes modificar libremente cualquier archivo de su interior (por ejemplo, `utils.py` y `train.py` para entrenamiento single GPU).
+
+**¿Por qué este cambio?**
+- Permite personalizar y versionar scripts internos sin depender del repositorio original.
+- Facilita la replicabilidad y el soporte a largo plazo.
+
+**¿Qué debes saber?**
+- Si ya habías clonado el repo antes, elimina cualquier referencia a submódulos con:
+  ```bash
+  git submodule deinit -f so-vits-svc
+  git rm --cached so-vits-svc
+  rm -rf .git/modules/so-vits-svc
+  rm -f .gitmodules
+  ```
+- Ahora, al clonar el repo, tendrás acceso directo a todo el código de `so-vits-svc` y sus modificaciones.
+
+Si necesitas restaurar la versión original de So-VITS-SVC, puedes volver a agregarlo como submódulo o clonar el repo oficial por separado.
+
+---
+
+## Nota sobre la integración de So-VITS-SVC
+
+- La carpeta `so-vits-svc` ahora forma parte integral de este repositorio y **ya no es un submódulo**.
+- Se eliminó el submódulo y el repositorio interno (`.git`) para que todo el código y las modificaciones personalizadas sean visibles y versionables directamente aquí.
+- Si necesitas hacer este proceso en otro proyecto, sigue estos pasos:
+  1. Elimina el submódulo:
+     ```bash
+     git rm --cached so-vits-svc
+     rm -rf so-vits-svc/.git
+     rm -f .gitmodules
+     ```
+  2. Agrega la carpeta como normal:
+     ```bash
+     git add so-vits-svc
+     git commit -m "Eliminar submódulo y agregar so-vits-svc como carpeta normal"
+     git push
+     ```
+- Ahora puedes modificar cualquier archivo de `so-vits-svc` y compartir tus cambios con otros colaboradores.
+
+**Checklist final para dejar el repo listo y profesional:**
+- [x] `.gitignore` robusto y actualizado
+- [x] README claro, con advertencias y buenas prácticas
+- [x] Submódulos eliminados y carpetas integradas
+- [x] Documentación de pasos especiales (como este)
+- [x] Estructura de carpetas limpia y replicable
+- [x] Instrucciones para clonar y usar el repo desde cero
+
+¡El repositorio está listo para producción, colaboración y replicabilidad!
+
+---
+
 ¿Listo para clonar tu voz?  
 ¡Sigue los pasos y documenta tu experiencia para mejorar este pipeline!
 
