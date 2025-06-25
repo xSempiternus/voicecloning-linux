@@ -1,6 +1,6 @@
 # voiceclonation-linux
 
-Pipeline completo para clonación de voz artística usando **So-VITS-SVC**, **Demucs** y **FastAPI**.
+Pipeline completo y optimizado para clonación de voz artística usando **So-VITS-SVC**, **Demucs** y **FastAPI**.
 
 > **Recomendado:** Entrena y ejecuta en **Linux/WSL** (Windows Subsystem for Linux) con Python 3.10+ y GPU Nvidia.  
 > **No garantizado** en Windows nativo.
@@ -14,6 +14,7 @@ Pipeline completo para clonación de voz artística usando **So-VITS-SVC**, **De
 - `data/` — Audios de entrenamiento y procesados (**no incluidos en el repo**).
 - `logs/` — Checkpoints y logs de entrenamiento (**no incluidos en el repo**).
 - `frontend/`, `models/`, etc. — Otros módulos del proyecto.
+- Scripts de automatización y optimización en la raíz del proyecto.
 
 ---
 
@@ -33,34 +34,76 @@ Pipeline completo para clonación de voz artística usando **So-VITS-SVC**, **De
    pip install -r requirements.txt
    ```
 
-3. **Preprocesa tus datos de voz:**
+3. **Preprocesa y optimiza tus datos de voz:**
    ```bash
-   python so-vits-svc/preprocess_flist_config.py --source_dir data/mi_voz
-   python so-vits-svc/preprocess_hubert_f0.py
+   # Verifica que todos los audios sean mono
+   python backend/verificar_mono.py data/mi_voz/niko/
+
+   # Chequea la calidad del dataset
+   python check_audio_quality.py data/mi_voz/niko/
+
+   # Limpia los audios para evitar pitidos
+   python clean_audio_pitching.py data/mi_voz/niko/
+
+   # Preprocesa los datos para So-VITS-SVC
+   python so-vits-svc/preprocess_hubert_f0.py --in_dir data/mi_voz/niko --f0_predictor harvest
    ```
 
-4. **Entrena el modelo:**
+4. **Entrena el modelo (GPU):**
    ```bash
-   python so-vits-svc/train.py -c so-vits-svc/configs/config.json -m svc
+   python so-vits-svc/run_train_gpu.py
+   # o para CPU
+   python so-vits-svc/train_cpu.py
    ```
 
 5. **Monitorea el entrenamiento con TensorBoard:**
    ```bash
-   tensorboard --logdir=logs/svc
+   tensorboard --logdir=logs/niko
    # Abre http://localhost:6006 en tu navegador
+   ```
+
+6. **Post-procesa el audio generado:**
+   ```bash
+   python post_process_audio.py so-vits-svc/results/mi_inferencia.wav
    ```
 
 ---
 
-## Notas y buenas prácticas
+## Optimización y mejores prácticas
 
-- **No subas** datos, audios, logs, checkpoints ni entornos virtuales al repositorio.
-- Si trabajas en **Windows**, crea un entorno virtual nuevo y ejecuta `pip install -r requirements.txt`.  
-  _Los entornos virtuales de Linux y Windows **no son compatibles** entre sí._
-- Los archivos de entrenamiento, logs y checkpoints generados en Linux/WSL **no deben copiarse** directamente a Windows.
-- Usa siempre `.gitignore` para mantener el repo limpio.
-- Documenta cualquier cambio importante en este README.
-- Si necesitas scripts distintos para Windows y Linux, sepáralos en carpetas o documenta su uso.
+- Usa `mel_fmin: 40.0` y `mel_fmax: 14000.0` en tu config para evitar artefactos.
+- Activa `vol_aug` y `vol_embedding` para mayor robustez.
+- Prueba el predictor de F0 `harvest` o `rmvpe` para mejores resultados.
+- Si aparecen pitidos, aplica el post-procesado y revisa la calidad de los datos originales.
+- Consulta la guía avanzada: `GUIA_OPTIMIZACION_SO_VITS_SVC.md`.
+
+---
+
+## Ejemplo de inferencia
+
+```bash
+python so-vits-svc/inference_main.py \
+  -m logs/niko/G_epoch_270.pth \
+  -c logs/niko/config.json \
+  -n Thinking\ Out\ Loud_only_vocals_mono.wav \
+  -s niko \
+  --device cuda \
+  -f0p harvest \
+  --noice_scale 0.1
+```
+
+El archivo generado estará en `so-vits-svc/results/` con un nombre similar a:
+`Thinking Out Loud_only_vocals_mono.wav_0key_niko_sovits_harvest.flac`
+
+---
+
+## Troubleshooting
+
+- Si tienes errores de dependencias, revisa la versión de Python y reinstala el entorno virtual.
+- Si el audio da error de canales, asegúrate de que todos los `.wav` sean **mono** (usa el script de conversión incluido).
+- Para problemas de rutas, usa siempre rutas absolutas o relativas desde la raíz del proyecto.
+- Consulta los logs y TensorBoard para monitorear el entrenamiento y detectar problemas.
+- Si el modelo produce pitidos, revisa la guía de optimización y aplica el post-procesado.
 
 ---
 
@@ -82,15 +125,6 @@ Este repositorio incluye un archivo `.gitignore` robusto para mantener el histor
 - Mantiene el repositorio profesional y fácil de clonar.
 
 Si necesitas compartir datos o modelos, usa servicios externos (Google Drive, HuggingFace, etc.) y documenta los pasos de descarga en el README.
-
----
-
-## Troubleshooting
-
-- Si tienes errores de dependencias, revisa la versión de Python y reinstala el entorno virtual.
-- Si el audio da error de canales, asegúrate de que todos los `.wav` sean **mono** (usa el script de conversión incluido).
-- Para problemas de rutas, usa siempre rutas absolutas o relativas desde la raíz del proyecto.
-- Consulta los logs y TensorBoard para monitorear el entrenamiento y detectar problemas.
 
 ---
 
@@ -123,34 +157,16 @@ Si necesitas restaurar la versión original de So-VITS-SVC, puedes volver a agre
 
 ---
 
-## Nota sobre la integración de So-VITS-SVC
+## Cómo destacar este proyecto en tu CV
 
-- La carpeta `so-vits-svc` ahora forma parte integral de este repositorio y **ya no es un submódulo**.
-- Se eliminó el submódulo y el repositorio interno (`.git`) para que todo el código y las modificaciones personalizadas sean visibles y versionables directamente aquí.
-- Si necesitas hacer este proceso en otro proyecto, sigue estos pasos:
-  1. Elimina el submódulo:
-     ```bash
-     git rm --cached so-vits-svc
-     rm -rf so-vits-svc/.git
-     rm -f .gitmodules
-     ```
-  2. Agrega la carpeta como normal:
-     ```bash
-     git add so-vits-svc
-     git commit -m "Eliminar submódulo y agregar so-vits-svc como carpeta normal"
-     git push
-     ```
-- Ahora puedes modificar cualquier archivo de `so-vits-svc` y compartir tus cambios con otros colaboradores.
+**Optimización y Automatización de Clonación de Voz con So-Vits-SVC**
+- Implementé un pipeline completo para clonación de voz artística, integrando So-VITS-SVC, Demucs y FastAPI.
+- Automatización de preprocesado, chequeo de calidad, limpieza, entrenamiento y post-procesado de audios.
+- Ajuste de hiperparámetros, control de recursos (CPU/GPU), y reducción de artefactos en la síntesis.
+- Documentación de mejores prácticas y desarrollo de scripts personalizados para análisis y limpieza de datos.
+- Uso de Python, PyTorch, procesamiento de audio y manejo de grandes volúmenes de datos.
 
-**Checklist final para dejar el repo listo y profesional:**
-- [x] `.gitignore` robusto y actualizado
-- [x] README claro, con advertencias y buenas prácticas
-- [x] Submódulos eliminados y carpetas integradas
-- [x] Documentación de pasos especiales (como este)
-- [x] Estructura de carpetas limpia y replicable
-- [x] Instrucciones para clonar y usar el repo desde cero
-
-¡El repositorio está listo para producción, colaboración y replicabilidad!
+**Skills:** Deep Learning, Python, Audio Processing, PyTorch, Automatización, Machine Learning, Data Cleaning
 
 ---
 
@@ -161,3 +177,9 @@ Si necesitas restaurar la versión original de So-VITS-SVC, puedes volver a agre
 
 ¿Quieres agregar ejemplos de inferencia, integración web o más troubleshooting?  
 ¡Edita este README y contribuye!
+
+---
+
+## Resultados de inferencia y observaciones
+
+Se realizaron inferencias utilizando el último modelo entrenado. Los resultados obtenidos fueron unos pitidos graves, aunque se logra percibir la voz de fondo. Se probó con la voz entrenada intentando cantar "Thinking Out Loud" de Ed Sheeran.
