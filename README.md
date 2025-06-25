@@ -83,7 +83,7 @@ Pipeline completo y optimizado para clonación de voz artística usando **So-VIT
 
 ```bash
 python so-vits-svc/inference_main.py \
-  -m logs/niko/G_epoch_270.pth \
+  -m logs/niko/G_epoch_270.pth \  # <--- Checkpoint utilizado para la inferencia
   -c logs/niko/config.json \
   -n Thinking\ Out\ Loud_only_vocals_mono.wav \
   -s niko \
@@ -91,6 +91,8 @@ python so-vits-svc/inference_main.py \
   -f0p harvest \
   --noice_scale 0.1
 ```
+
+> **Nota:** El checkpoint utilizado para la inferencia es `logs/niko/G_epoch_270.pth`. Puedes cambiar este archivo por el checkpoint que prefieras según la calidad de los resultados obtenidos durante el entrenamiento.
 
 El archivo generado estará en `so-vits-svc/results/` con un nombre similar a:
 `Thinking Out Loud_only_vocals_mono.wav_0key_niko_sovits_harvest.flac`
@@ -182,4 +184,4 @@ Si necesitas restaurar la versión original de So-VITS-SVC, puedes volver a agre
 
 ## Resultados de inferencia y observaciones
 
-Se realizaron inferencias utilizando el último modelo entrenado. Los resultados obtenidos fueron unos pitidos graves, aunque se logra percibir la voz de fondo. Se probó con la voz entrenada intentando cantar "Thinking Out Loud" de Ed Sheeran.
+Se realizaron inferencias utilizando el **checkpoint `G_epoch_270.pth`** (el más reciente al momento de la prueba). Los resultados obtenidos fueron unos pitidos graves, aunque se logra percibir la voz de fondo. Se probó con la voz entrenada intentando cantar "Thinking Out Loud" de Ed Sheeran.
