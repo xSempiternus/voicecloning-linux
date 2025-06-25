@@ -34,6 +34,19 @@ def main():
     assert torch.cuda.is_available(), "CPU training is not allowed."
     hps = utils.get_hparams()
 
+    # Configuración para optimizar el uso de GPU con poca memoria
+    torch.cuda.empty_cache()
+    if torch.cuda.is_available():
+        # Configuración para GPUs con memoria limitada
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cudnn.deterministic = False
+        torch.backends.cudnn.enabled = True
+        print(f"CUDA Disponible: {torch.cuda.is_available()}")
+        print(f"CUDA Versión: {torch.version.cuda}")
+        print(f"GPU: {torch.cuda.get_device_name(0)}")
+        print(f"Memoria total: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.2f} GB")
+    
     n_gpus = torch.cuda.device_count()
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = hps.train.port
@@ -53,7 +66,12 @@ def run_single_gpu(hps):
     writer = SummaryWriter(log_dir=hps.model_dir)
     writer_eval = SummaryWriter(log_dir=os.path.join(hps.model_dir, "eval"))
     torch.manual_seed(hps.train.seed)
-    torch.cuda.set_device(rank)
+    
+    # Configuración explícita del dispositivo
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    torch.cuda.set_device(0)  # Asegurarse de usar la primera GPU
+    print(f"Using device: {device}")
+    
     collate_fn = TextAudioCollate()
     all_in_mem = hps.train.all_in_mem
     train_dataset = TextAudioSpeakerLoader(hps.data.training_files, hps, all_in_mem=all_in_mem)
@@ -120,6 +138,19 @@ def run_single_gpu(hps):
         # update learning rate
         scheduler_g.step()
         scheduler_d.step()
+
+        # Guardar checkpoint cada 15 epochs
+        if epoch % 15 == 0:
+            utils.save_checkpoint(net_g, optim_g, hps.train.learning_rate, epoch,
+                                  os.path.join(hps.model_dir, f"G_epoch_{epoch}.pth"))
+            utils.save_checkpoint(net_d, optim_d, hps.train.learning_rate, epoch,
+                                  os.path.join(hps.model_dir, f"D_epoch_{epoch}.pth"))
+            keep_ckpts = getattr(hps.train, 'keep_ckpts', 0)
+            if keep_ckpts > 0:
+                utils.clean_checkpoints(path_to_models=hps.model_dir, n_ckpts_to_keep=keep_ckpts, sort_by_time=True)
+                # Limpiar checkpoints de epochs
+                utils.clean_checkpoints(path_to_models=hps.model_dir, n_ckpts_to_keep=keep_ckpts, sort_by_time=True)
+                utils.clean_checkpoints(path_to_models=hps.model_dir, n_ckpts_to_keep=keep_ckpts, sort_by_time=True)
 
 def run(rank, n_gpus, hps):
     global global_step
@@ -197,23 +228,34 @@ def run(rank, n_gpus, hps):
             for param_group in optim_d.param_groups:
                 param_group['lr'] = hps.train.learning_rate / warmup_epoch * epoch
         # training
-        if rank == 0:
-            train_and_evaluate(rank, epoch, hps, [net_g, net_d], [optim_g, optim_d], [scheduler_g, scheduler_d], scaler,
-                               [train_loader, eval_loader], logger, [writer, writer_eval])
-        else:
-            train_and_evaluate(rank, epoch, hps, [net_g, net_d], [optim_g, optim_d], [scheduler_g, scheduler_d], scaler,
-                               [train_loader, None], None, None)
+        train_and_evaluate(rank, epoch, hps, [net_g, net_d], [optim_g, optim_d], [scheduler_g, scheduler_d], scaler,
+                           [train_loader, eval_loader], logger, [writer, writer_eval])
         # update learning rate
         scheduler_g.step()
         scheduler_d.step()
 
-def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers):
+        # Guardar checkpoint cada 15 epochs
+        if epoch % 15 == 0 and rank == 0:
+            utils.save_checkpoint(net_g, optim_g, hps.train.learning_rate, epoch,
+                                  os.path.join(hps.model_dir, f"G_epoch_{epoch}.pth"))
+            utils.save_checkpoint(net_d, optim_d, hps.train.learning_rate, epoch,
+                                  os.path.join(hps.model_dir, f"D_epoch_{epoch}.pth"))
+            keep_ckpts = getattr(hps.train, 'keep_ckpts', 0)
+            if keep_ckpts > 0:
+                utils.clean_checkpoints(path_to_models=hps.model_dir, n_ckpts_to_keep=keep_ckpts, sort_by_time=True)
+
+def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler,
+                       loaders, logger, writers):
     net_g, net_d = nets
     optim_g, optim_d = optims
     scheduler_g, scheduler_d = schedulers
     train_loader, eval_loader = loaders
     if writers is not None:
         writer, writer_eval = writers
+    
+    # Asegurar que todos los tensores estén en el mismo dispositivo
+    device = next(net_g.parameters()).device
+    print(f"Training on device: {device}")
     
     half_type = torch.bfloat16 if hps.train.half_type == "bf16" else torch.float16
 
@@ -324,17 +366,9 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
                     images=image_dict,
                     scalars=scalar_dict
                 )
-
+            # Evaluación automática cada eval_interval pasos
             if global_step % hps.train.eval_interval == 0:
                 evaluate(hps, net_g, eval_loader, writer_eval)
-                utils.save_checkpoint(net_g, optim_g, hps.train.learning_rate, epoch,
-                                      os.path.join(hps.model_dir, "G_{}.pth".format(global_step)))
-                utils.save_checkpoint(net_d, optim_d, hps.train.learning_rate, epoch,
-                                      os.path.join(hps.model_dir, "D_{}.pth".format(global_step)))
-                keep_ckpts = getattr(hps.train, 'keep_ckpts', 0)
-                if keep_ckpts > 0:
-                    utils.clean_checkpoints(path_to_models=hps.model_dir, n_ckpts_to_keep=keep_ckpts, sort_by_time=True)
-
         global_step += 1
 
     if rank == 0:

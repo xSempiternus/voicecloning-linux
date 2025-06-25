@@ -161,7 +161,8 @@ if __name__ == "__main__":
         print("Loaded Mel Extractor.")
     else:
         mel_extractor = None
-    filenames = glob(f"{args.in_dir}/*/*.wav", recursive=True)  # [:10]
+    # Cambiado para aceptar archivos .wav directamente en la carpeta
+    filenames = glob(f"{args.in_dir}/*.wav", recursive=True)
     shuffle(filenames)
     mp.set_start_method("spawn", force=True)
 

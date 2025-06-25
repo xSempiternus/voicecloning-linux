@@ -464,7 +464,11 @@ class SynthesizerTrn(nn.Module):
         g = self.emb_g(g).transpose(1,2)
 
         # vol proj
-        vol = self.emb_vol(vol[:,:,None]).transpose(1,2) if vol is not None and self.vol_embedding else 0
+        if vol is not None and self.vol_embedding:
+            vol = vol.to(next(self.emb_vol.parameters()).device)
+            vol = self.emb_vol(vol[:,:,None]).transpose(1,2)
+        else:
+            vol = 0
 
         # ssl prenet
         x_mask = torch.unsqueeze(commons.sequence_mask(c_lengths, c.size(2)), 1).to(c.dtype)
