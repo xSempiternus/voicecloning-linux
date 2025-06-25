@@ -156,30 +156,6 @@ A partir de la versión actual, la carpeta `so-vits-svc` ya **no es un submódul
 - Ahora, al clonar el repo, tendrás acceso directo a todo el código de `so-vits-svc` y sus modificaciones.
 
 Si necesitas restaurar la versión original de So-VITS-SVC, puedes volver a agregarlo como submódulo o clonar el repo oficial por separado.
-
----
-
-## Cómo destacar este proyecto en tu CV
-
-**Optimización y Automatización de Clonación de Voz con So-Vits-SVC**
-- Implementé un pipeline completo para clonación de voz artística, integrando So-VITS-SVC, Demucs y FastAPI.
-- Automatización de preprocesado, chequeo de calidad, limpieza, entrenamiento y post-procesado de audios.
-- Ajuste de hiperparámetros, control de recursos (CPU/GPU), y reducción de artefactos en la síntesis.
-- Documentación de mejores prácticas y desarrollo de scripts personalizados para análisis y limpieza de datos.
-- Uso de Python, PyTorch, procesamiento de audio y manejo de grandes volúmenes de datos.
-
-**Skills:** Deep Learning, Python, Audio Processing, PyTorch, Automatización, Machine Learning, Data Cleaning
-
----
-
-¿Listo para clonar tu voz?  
-¡Sigue los pasos y documenta tu experiencia para mejorar este pipeline!
-
----
-
-¿Quieres agregar ejemplos de inferencia, integración web o más troubleshooting?  
-¡Edita este README y contribuye!
-
 ---
 
 ## Resultados de inferencia y observaciones
